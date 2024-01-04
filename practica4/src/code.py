@@ -3,20 +3,23 @@
 import rospy
 from geometry_msgs.msg import Twist 
 from sensor_msgs.msg import LaserScan
-import torch.nn as nn
 
-class NeuralNetwork(nn.Modele):
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.models import Sequential
+
+
+class NeuralNetwork(tf.keras.Model):
     def __init__(self, num_sensors):
         super(NeuralNetwork, self).__init__()
-        self.layer1 = nn.Linear(num_sensors, 10)
-        self.layer2 = nn.Linear(10,10)
-        self.output_layer = nn.Linear(10, 2)
+        self.layer = Dense(8, activation='relu', input_shape=(num_sensors,))
+        self.output_layer = Dense(2)
 
     def forward(self, x):
-        x = torch.relu(self.layer1(x))
-        x = torch.relu(self.layer2(x))
-        x = self.output_layer(x)
-        return x
+        x = self.layer(x)
+        return self.output_layer(x)
+       
 
 
 def initialize_population(size, num_sensors):
@@ -25,9 +28,10 @@ def initialize_population(size, num_sensors):
 
     for _ in range(size):   #una red por robot de la poblacion
         neural_network = NeuralNetwork(num_sensors)
+        neural_network.build((None, num_sensors))
 
-        for param in neural_network.parameters():
-            nn.init.uniform_(param, -1, 1) #init de los pesos
+        for layer in neural_network.layers():
+            layer.set_weights([np.random.uniform(-1, 1, size = w.shape) for w in layer.get_weights()]) #init de los pesos
 
         population.append(neural_network)
     
