@@ -3,7 +3,6 @@
 import rospy
 from geometry_msgs.msg import Twist 
 from sensor_msgs.msg import LaserScan
-import torch
 import torch.nn as nn
 
 class NeuralNetwork(nn.Modele):
@@ -20,48 +19,66 @@ class NeuralNetwork(nn.Modele):
         return x
 
 
-class Robot: 
+def initialize_population(size, num_sensors):
+    
+    population = []
 
-    def __init__(self, name, neural_network):
-        
-        self.name = name
-        self.neural_network = neural_network
+    for _ in range(size):   #una red por robot de la poblacion
+        neural_network = NeuralNetwork(num_sensors)
 
-    def move(self):
-        
-        data = None #METER AQUI LASER
-        action = self.neural_network(data)
+        for param in neural_network.parameters():
+            nn.init.uniform_(param, -1, 1) #init de los pesos
 
-        return action
+        population.append(neural_network)
+    
+    return population
 
-
-def initialize_population(size):
+def selection(population, fitnesses):
+    #implementar ruleta
     pass
 
-def calculate_fitness(robot):
+def crossover(parents):
+    #implementar aleatorio
     pass
 
-def evolve_popu(population):
-    #PSEUDOCOGIDO AQUI
-    # commit test
+def mutate(children):
+    #TODO: escoller metodo
     pass
+
+def calculate_fitness():
+    #fundion de Lois
+    pass
+
 
 def main():
 
     rospy.init_node("neural_robot_controller", anonymous=True)
 
     num_generations = 20
+    size = 3
+    t = 0
+    n_parents = 2
 
-    size = 10
     population = initialize_population(size)
+    fitnesses = [calculate_fitness(robot) for robot in population]
 
-    robots = [None for r in population]
+    while t < num_generations:
+        t+=1    
 
-    for robot in robots: 
-        action = robot.move()
-        fitness = calculate_fitness(robot)
+        #SELECCION P' desde P(t-1)
+        parents = selection(population, fitnesses, n_parents) 
 
-    population = evolve_popu(population)
+        #CRUCE P'
+        children = crossover(parents)
+
+        #MUTACION P'
+        mutate_children = mutate(children)
+
+        #SUSTITUIR P a partir de P(t-1) e P'
+        #TODO: definir cales son os compoñentes da nova poboacion
+
+        #AVALIAR P
+        fitnesses = [calculate_fitness(robot) for robot in population]
 
 
 
