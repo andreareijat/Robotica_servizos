@@ -22,6 +22,24 @@ class NeuralNetwork(tf.keras.Model):
        
 
 
+class Robot:
+    def __init__(self, name, neural_network):
+        self.name = name
+        self.neural_network = neural_network
+        self.laser_data = None
+        self.vel_pub = rospy.Subscriber(name + '/cmd_vel', Twist, queue_size=10)
+        rospy.Subscriber(name + '/fron_scan', LaserScan, self.laser_callback)
+
+    def laser_callback(self, data):
+        self.laser_data = data.ranges #TODO: comprobar esto pero creo que e un array de 8 valores
+
+    def compute_action(self):
+        sensor_input = np.array(self.sensor_data)
+        action = self.neural_network(sensor_input)
+        return action
+
+
+
 def initialize_population(size, num_sensors):
     
     population = []
@@ -36,6 +54,7 @@ def initialize_population(size, num_sensors):
         population.append(neural_network)
     
     return population
+
 
 def selection(population, fitnesses):
     #implementar ruleta
