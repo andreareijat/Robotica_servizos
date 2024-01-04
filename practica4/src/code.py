@@ -3,6 +3,7 @@
 import rospy
 from geometry_msgs.msg import Twist 
 from sensor_msgs.msg import LaserScan
+import torch
 import torch.nn as nn
 
 class NeuralNetwork(nn.Modele):
@@ -42,6 +43,7 @@ def calculate_fitness(robot):
 
 def evolve_popu(population):
     #PSEUDOCOGIDO AQUI
+    # commit test
     pass
 
 def main():
