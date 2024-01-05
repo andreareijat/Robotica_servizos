@@ -1,14 +1,16 @@
 #!/usr/bin/env python
+from math import sqrt
+import numpy as np
 
 import rospy
 from geometry_msgs.msg import Twist 
 from sensor_msgs.msg import LaserScan
 
-import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import Sequential
 
+exit()
 
 class NeuralNetwork(tf.keras.Model):
     def __init__(self, num_sensors):
@@ -28,14 +30,25 @@ class Robot:
         self.neural_network = neural_network
         self.laser_data = None
         self.vel_pub = rospy.Subscriber(name + '/cmd_vel', Twist, queue_size=10)
+        self.vel_histoty = []
+        self.sensor_histoty = []
+
         rospy.Subscriber(name + '/front_scan', LaserScan, self.laser_callback)
 
     def laser_callback(self, data):
+        # !PREGUNTA por que reemplazas esto?
         self.laser_data = data.ranges #TODO: comprobar esto pero creo que e un array de 8 valores
+        
+        # save data to compute fitness. check size
+        self.sensor_histoty.append(self.laser_data)
 
     def compute_action(self):
         sensor_input = np.array(self.laser_data)
         action = self.neural_network(sensor_input)
+        
+        # save data to compute fitness. check size
+        self.vel_histoty.append(action)
+
         return action
 
 
@@ -68,9 +81,21 @@ def mutate(children):
     #TODO: escoller metodo
     pass
 
-def calculate_fitness():
-    #fundion de Lois
-    pass
+def calculate_fitness(robot, max_sensor_read):
+    #fundion de Lois | fundion jaja 
+    
+    # TODO CHECK WHOLE FUNCTION
+    vels = np.asarray(robot.vel_history)
+    mean_vel = np.average(vels, axis=0) # 1x2
+    lin_vel = np.sum(mean_vel)/2
+    
+    sensor_history = np.asarray(robot.sensor_history)
+    max_read = np.amax(sensor_history, axis=1)
+    mean_max_sensor = np.average(max_read) # Compressible to a single line
+
+    phi = lin_vel * (1 - sqrt(np.abs(mean_vel[0] - mean_vel[1]))) * mean_max_sensor
+    
+    return phi
 
 
 def main():
@@ -97,8 +122,8 @@ def main():
         #MUTACION P'
         mutate_children = mutate(children)
 
-        #SUSTITUIR P a partir de P(t-1) e P'
-        #TODO: definir cales son os compoñentes da nova poboacion
+        #SUSTITUIR P a partir de P(t-1) e P_prima || cambiado pq daba erro de utf-8 (codificacion)
+        #TODO: definir cales son os componhentes da nova poboacion || idem que arriba. utf-8
 
         #AVALIAR P
         fitnesses = [calculate_fitness(robot) for robot in population]
