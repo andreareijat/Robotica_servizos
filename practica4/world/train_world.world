@@ -1,0 +1,42 @@
+<?xml version="1.0" ?>
+
+<sdf version="1.5">
+	<world name="my_world">
+		<!-- A global light source -->
+		<include>
+			<uri>model://sun</uri>
+		</include>
+
+		<!-- A ground plane -->
+		<include>
+			<uri>model://ground_plane</uri>
+		</include>
+        
+		<!-- Robots -->
+		
+		<include>
+		    <uri>model://robot</uri>
+		    <name>robot</name>
+		    <pose>-1.5 0 0 0 0 0</pose>
+		</include>
+		
+		<!-- Mazes -->
+		
+		<include>
+		    <uri>model://default_maze</uri>
+		    <name>maze</name>
+		    <pose>0 0 0 0 0 0</pose>
+		</include>
+		
+		<physics type="ode">
+		  <!-- Change the update rate to speed up/slow down -->
+		  <!-- the simulation:                              -->
+		  <!-- Value of 1000 means real time                -->
+		  <!-- Value larger than 1000 the simulation runs   -->
+		  <!--    faster than real time                     -->
+		  <!-- Value lower than 1000 the simulation runs    -->
+		  <!--    slower than real time                     -->
+		  <real_time_update_rate>2000</real_time_update_rate>
+		</physics>
+	</world>
+</sdf>
