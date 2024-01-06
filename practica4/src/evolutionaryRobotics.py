@@ -338,6 +338,7 @@ class GeneticAlgorithm:
     # an individual should depend on its fitness (score).
     def parents(self):
         # TODO
+        pass
 
 
         
