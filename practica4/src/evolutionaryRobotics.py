@@ -329,8 +329,9 @@ class GeneticAlgorithm:
     # Generate random individual to initialise the population. This
     # method should return a random individual for the GA
     def random_individual(self):
-        # TODO
-        pass
+        num_weights = nn.number_of_weights()
+        return np.random.uniform(-1, 1, size=num_weights)
+        
     
     # Method to select and return two parents from the population. This
     # method should return two individuals of the current population
@@ -344,18 +345,20 @@ class GeneticAlgorithm:
         
     # Method to check if the optimisation can stop
     # This method should return True if the termination condition(s) is(are) fulfilled.
-    def stop_condition(self):
-        # TODO
-
-        
+    def stop_condition(self): 
+        if self.iter >= self.max_iter: 
+            return True
         return False
 
     # Method to cross the two parents
     # This method takes as argument two individuals of the popularion and
     # it must return two new individuals (potentially) for the next population.
     def crossover(self, p1, p2):
-        # TODO
-        pass
+        crossover_point = np.random.randint(1, len(p1))
+        child1 = p1[:crossover_point] + p2[crossover_point:]
+        child2 = p2[:crossover_point] + p1[:crossover_point]
+        return child1, child2
+
 
     
     # Mutation method for one individual.
@@ -394,13 +397,27 @@ class GeneticAlgorithm:
     # solution after the optimisation process, i.e. a vector representing the
     # fitesst individual
     def optimize(self):
-        # TODO
-        pass
+
+        while not self.stop_condition():
+            self.iter += 1
+
+            #selection
+            parent1, parent2 = self.parents()
+
+            #crossover
+            child1, child2 = self.crossover(parent1, parent2)
+
+            #mutation
+            child1 = self.mutation(child1)
+            child2 = self.mutation(child2)
+
+            #Evaluate fitness and update popu
 
 
     
 # Main program
 if __name__ == '__main__':
+    
     # Set the number of weights as the dimension of the GA
     GAParams['dim'] = nn.number_of_weights()
     # Create a Genetic Algorithm object
