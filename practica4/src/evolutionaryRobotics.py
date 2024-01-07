@@ -283,7 +283,10 @@ def laser_cb(L):
 
     fness = vel *(1-sqrt(abs(vel[0]-vel[1])) * (1-i))
 
-    
+    # Might delete later idk
+    if min(scan) < crash_distance:
+        crash = True
+
 # Clock callback function. This function is executed periodically
 # and controls whether the simulation is running to 
 def clock_cb(t):
