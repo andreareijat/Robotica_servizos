@@ -4,6 +4,7 @@
 # This script will train a neural network using
 # a genetic algorithm for a robot simulated in Gazebo.
 import time
+from math import sqrt
 import numpy as np
 import rospy
 from sensor_msgs.msg import LaserScan
@@ -177,7 +178,8 @@ class MLP:
 # Definition of the NLP for the GA. Because of how ROS works in
 # python the network object needs to be global so that ROS callbacks
 # can access it.
-units = [6, 5, 8, 2]    # TODO: Change the network architecure HERE
+units = [6, 5, 8, 2]    # TODO: Change the network architecure HERE.
+# TODO comprobar que esto non rompe cando metemos os 8 sensores do scan. quitar comentario
 nn = MLP(units)
 
 
@@ -263,8 +265,23 @@ def laser_cb(L):
     # You might want to use these global variables here
     global scan_front_new, scan_back_new, crash, fness, scan
     # TODO
-    pass
 
+    scan = L
+
+    cmd_vel = Twist()
+    vel = nn(scan)
+    cmd_vel.linear.x = vel[0]
+    cmd_vel.linear.y = vel[1]
+    # kosas
+    pub_vel.publish(cmd_vel)
+
+    scan_max = max(scan)
+    r_max = 3 # parameter to chech sensor activation. Might lower later
+    if scan_max > r_max:
+        scan_max = r_max
+    i = scan_max/r_max # activation
+
+    fness = vel *(1-sqrt(abs(vel[0]-vel[1])) * (1-i))
 
     
 # Clock callback function. This function is executed periodically
@@ -287,8 +304,9 @@ def clock_cb(t):
 # interfacing ROS with the GA implementation, but care must be taken in the
 # implementation because the sensors received as an argument to the CB can
 # be the front or rear sensors
+# TODO comprobar 
 sub_front = rospy.Subscriber('/robot/laser_front/scan', LaserScan, laser_cb)
-sub_back = rospy.Subscriber('/robot/laser_back/scan', LaserScan, laser_cb)
+# sub_back = rospy.Subscriber('/robot/laser_back/scan', LaserScan, laser_cb) 
 
 # ROS subscriber to the clock topic to launch simulations for a specific
 # period of time (note: the callback functions are running as separate
@@ -412,6 +430,8 @@ class GeneticAlgorithm:
             child2 = self.mutation(child2)
 
             #Evaluate fitness and update popu
+
+            
 
 
     
