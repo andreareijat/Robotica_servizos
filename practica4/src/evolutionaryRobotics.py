@@ -281,7 +281,8 @@ def laser_cb(L):
         scan_max = r_max
     i = scan_max/r_max # activation
 
-    fness = vel *(1-sqrt(abs(vel[0]-vel[1])) * (1-i))
+    fness += vel *(1-sqrt(abs(vel[0]-vel[1])) * (1-i)) 
+    # cambio de = a += para 1.premiar simulacions longas, 2.ter un valor pseudo-medio
 
     # Might delete later idk
     if min(scan) < crash_distance:
@@ -358,9 +359,24 @@ class GeneticAlgorithm:
     # method should return two individuals of the current population
     # to me crossed in the crossover operator. The probability of selecting
     # an individual should depend on its fitness (score).
-    def parents(self):
+    def parents(self, ns):
         # TODO
-        pass
+
+        # Metodo de ruleta
+        total = np.sum(self.score)
+        parent_results =[]
+
+        for _ in range(ns):
+            r = np.random.uniform(0, total)
+            cp = 0
+
+            for choice, prob in zip(self.population, self.score):
+                cp += prob
+                if r<= cp:
+                    parent_results.append(choice)
+                    break
+
+        return parent_results
 
 
         
@@ -387,7 +403,8 @@ class GeneticAlgorithm:
     # version of the individual
     def mutation(self, c):
         # TODO
-        pass
+        # pass
+        return c
 
 
     
@@ -434,8 +451,27 @@ class GeneticAlgorithm:
 
             #Evaluate fitness and update popu
 
-            
+        # Lois' approach ↓ 
 
+        while not self.stop_condition():
+            self.iter += 1
+
+            # selection
+            p1, p2 = self.parents(2)
+            # crossover
+            cross = self.crossover(p1, p2)
+            # mutation
+            # m1 = self.mutation(c1)
+            # m2 = self.mutation(c2)
+
+            for ind in cross:
+                mi = self.mutation(ind)
+                fitness = self.fitness(mi) # simulate the final child to obtain a fitness value
+                self.population.append(mi) # Revisar estas duas linhas, pq non esta habendo remplazo poblacional
+                self.score = np.hstack(self.score, fitness) # Revisar estas duas linhas, pq non esta habendo remplazo poblacional
+
+        
+        return self.population[np.argmax(self.score)]
 
     
 # Main program
