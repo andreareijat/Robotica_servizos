@@ -271,8 +271,10 @@ def laser_cb(L):
 
     cmd_vel = Twist()
     vel = nn(scan)
-    cmd_vel.linear.x = vel[0]
-    cmd_vel.linear.y = vel[1]
+
+    max_vel = 1.0
+    cmd_vel.linear.x = max(min(vel[0], max_vel), -max_vel)
+    cmd_vel.linear.y = max(min(vel[1], max_vel), -max_vel)
     # kosas
     pub_vel.publish(cmd_vel)
 
@@ -334,6 +336,8 @@ class GeneticAlgorithm:
     # My constructor for the GA
     def __init__(self, params = None):
         if params is not None:
+            self.best_fitness = -np.inf
+            self.no_improvement_counter = 0
             self.dim = params['dim']
             self.pop_size = params['pop_size']
             self.iter = 0
@@ -386,6 +390,17 @@ class GeneticAlgorithm:
     def stop_condition(self): 
         if self.iter >= self.max_iter: 
             return True
+
+        # current_best_fitness = max(self.score)
+        # if current_best_fitness > self.best_fitness: 
+        #     self.best_fitness = current_best_fitness
+        #     self.no_improvement_counter = 0
+        # else:
+        #     self.no_improvement_counter += 1
+
+        # if self.no_improvement_counter > self.performace_stop:
+        #     return True    
+
         return False
 
     # Method to cross the two parents
@@ -448,10 +463,6 @@ class GeneticAlgorithm:
             p1, p2 = self.parents(2)
             # crossover
             cross = self.crossover(p1, p2)
-
-            # mutation
-            # m1 = self.mutation(c1)
-            # m2 = self.mutation(c2)
 
             for ind in cross:
                 mi = self.mutation(ind)
