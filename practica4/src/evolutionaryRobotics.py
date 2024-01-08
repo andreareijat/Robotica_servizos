@@ -3,7 +3,7 @@
 #
 # This script will train a neural network using
 # a genetic algorithm for a robot simulated in Gazebo.
-from msilib import init_database
+
 import time
 from math import sqrt
 import numpy as np
@@ -267,7 +267,7 @@ def laser_cb(L):
     global scan_front_new, scan_back_new, crash, fness, scan
     # TODO
 
-    scan = L
+    scan = L.ranges
 
     cmd_vel = Twist()
     vel = nn(scan)
@@ -407,7 +407,7 @@ class GeneticAlgorithm:
         # TODO
 
         for i in range(len(c)):
-            if np.random.rang() < self.mutation_rate:
+            if np.random.rand() < self.mutation_rate:
                 c[i] += np.random.normal(0, self.mutation_sigma)
         return c
 
