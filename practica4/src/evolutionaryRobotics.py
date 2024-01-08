@@ -367,7 +367,8 @@ class GeneticAlgorithm:
         parent_results =[]
 
         for _ in range(ns):
-            r = np.random.uniform(0, total)
+            # r = np.random.uniform(0, total) esto da un erro, np de por que
+            r = np.random.random() * total
             cp = 0
 
             for choice, prob in zip(self.population, self.score):
@@ -392,8 +393,13 @@ class GeneticAlgorithm:
     # it must return two new individuals (potentially) for the next population.
     def crossover(self, p1, p2):
         crossover_point = np.random.randint(1, len(p1))
-        child1 = p1[:crossover_point] + p2[crossover_point:]
-        child2 = p2[:crossover_point] + p1[:crossover_point]
+        # na miha implementacion daba erro. cambieino
+        # child1 = p1[:crossover_point] + p2[crossover_point:]
+        # child2 = p2[:crossover_point] + p1[:crossover_point]
+
+        child1 = np.hstack([p1[:crossover_point], p2[crossover_point:]])
+        child2 = np.hstack([p2[:crossover_point], p1[:crossover_point]])
+
         return child1, child2
 
 
@@ -436,22 +442,22 @@ class GeneticAlgorithm:
     # fitesst individual
     def optimize(self):
 
-        while not self.stop_condition():
-            self.iter += 1
+        # while not self.stop_condition():
+        #     self.iter += 1
 
-            #selection
-            parent1, parent2 = self.parents()
+        #     #selection
+        #     parent1, parent2 = self.parents()
 
-            #crossover
-            child1, child2 = self.crossover(parent1, parent2)
+        #     #crossover
+        #     child1, child2 = self.crossover(parent1, parent2)
 
-            #mutation
-            child1 = self.mutation(child1)
-            child2 = self.mutation(child2)
+        #     #mutation
+        #     child1 = self.mutation(child1)
+        #     child2 = self.mutation(child2)
 
-            #Evaluate fitness and update popu
+        #     #Evaluate fitness and update popu
 
-        # Lois' approach ↓ 
+        # Lois' approach
 
         while not self.stop_condition():
             self.iter += 1
