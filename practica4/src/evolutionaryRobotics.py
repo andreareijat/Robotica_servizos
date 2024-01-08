@@ -3,9 +3,7 @@
 #
 # This script will train a neural network using
 # a genetic algorithm for a robot simulated in Gazebo.
-
 import time
-from math import sqrt
 import numpy as np
 import rospy
 from sensor_msgs.msg import LaserScan
@@ -125,7 +123,14 @@ class MLP:
     # This method prints the network as text for debugging but it works
     # for python >= 3.7
     # def __str__(self):
-    #     s = f'Network\n Inputs: {self.uni
+    #     s = f'Network\n Inputs: {self.units[0]}\n Outputs {self.units[-1]}\n'
+    #     s += f' Layers {self.layers} layers\n'
+    #     for i in range(self.layers):
+    #         s += f'Layer {i} weights:\n'
+    #         s += self.weights[i].__str__()
+    #         s += '\n'
+    #
+    #    return s
 
     # This method returns the totak number of weights of the network, which is
     # useful when vectorising/de-vectorising the weights
@@ -144,7 +149,6 @@ class MLP:
         size = 0
         for l in range(self.layers):
             size += (self.units[l] + 1) * self.units[l + 1]
-        # print("Size", size)
         if len(w) == size:
             idx0 = 0
             for l in range(self.layers):
@@ -173,8 +177,7 @@ class MLP:
 # Definition of the NLP for the GA. Because of how ROS works in
 # python the network object needs to be global so that ROS callbacks
 # can access it.
-units = [6, 5, 8, 2]    # TODO: Change the network architecure HERE.
-# TODO comprobar que esto non rompe cando metemos os 8 sensores do scan. quitar comentario
+units = [6, 5, 8, 2]    # TODO: Change the network architecure HERE
 nn = MLP(units)
 
 
@@ -260,43 +263,10 @@ def laser_cb(L):
     # You might want to use these global variables here
     global scan_front_new, scan_back_new, crash, fness, scan
     # TODO
+    pass
 
-    scan = L.ranges
 
-    cmd_vel = Twist()
-    vel = nn(scan)
     
-
-    max_vel = 0.4
-    cmd_vel.linear.x = max(min(vel[0], max_vel), -max_vel)
-    cmd_vel.linear.y = max(min(vel[1], max_vel), -max_vel)
-    # kosas
-    
-    pub_vel.publish(cmd_vel)
-
-    scan_max = max(scan)
-    r_max = 3 # parameter to chech sensor activation. Might lower later
-    if scan_max > r_max:
-        scan_max = r_max
-    i = scan_max/r_max # activation
-
-    fness += vel *(1-sqrt(abs(vel[0]-vel[1])) * (1-i)) 
-    # cambio de = a += para 1.premiar simulacions longas, 2.ter un valor pseudo-medio
-
-    # Might delete later idk
-    if min(scan) < crash_distance:
-        crash = True
-
-def laser_cb_back(L):
-    # You might want to use these global variables here
-    global crash, scan
-    # TODO
-
-    scan = L.ranges
-    # Might delete later idk
-    if min(scan) < crash_distance:
-        crash = True
-
 # Clock callback function. This function is executed periodically
 # and controls whether the simulation is running to 
 def clock_cb(t):
@@ -317,9 +287,8 @@ def clock_cb(t):
 # interfacing ROS with the GA implementation, but care must be taken in the
 # implementation because the sensors received as an argument to the CB can
 # be the front or rear sensors
-# TODO comprobar 
 sub_front = rospy.Subscriber('/robot/laser_front/scan', LaserScan, laser_cb)
-sub_back = rospy.Subscriber('/robot/laser_back/scan', LaserScan, laser_cb_back) 
+sub_back = rospy.Subscriber('/robot/laser_back/scan', LaserScan, laser_cb)
 
 # ROS subscriber to the clock topic to launch simulations for a specific
 # period of time (note: the callback functions are running as separate
@@ -331,7 +300,7 @@ sub_clock = rospy.Subscriber('/clock', Clock, clock_cb)
 # for the case study. 
 GAParams = {'dim' : 3,                  # Dimension of the search/parameter space
             'pop_size' : 2,             # Population size
-            'max_iter' : 10,             # Maximum number of iterations
+            'max_iter' : 1,             # Maximum number of iterations
             'mutation_rate' : 0.025,    # Mutation rate in the child population
             'mutation_sigma' : 2,       # Variance of the normal for mutation
             'performace_stop' : 1e-3,   # Stop criterion, minimum performance increase
@@ -342,8 +311,6 @@ class GeneticAlgorithm:
     # My constructor for the GA
     def __init__(self, params = None):
         if params is not None:
-            self.best_fitness = -np.inf
-            self.no_improvement_counter = 0
             self.dim = params['dim']
             self.pop_size = params['pop_size']
             self.iter = 0
@@ -370,24 +337,9 @@ class GeneticAlgorithm:
     # method should return two individuals of the current population
     # to me crossed in the crossover operator. The probability of selecting
     # an individual should depend on its fitness (score).
-    def parents(self, ns):
-
-        # Metodo de ruleta
-        total = np.sum(self.score)
-        parent_results =[]
-
-        for _ in range(ns):
-            # r = np.random.uniform(0, total) esto da un erro, np de por que
-            r = np.random.random() * total
-            cp = 0
-
-            for choice, prob in zip(self.population, self.score):
-                cp += prob
-                if r<= cp:
-                    parent_results.append(choice)
-                    break
-
-        return parent_results
+    def parents(self):
+        # TODO
+        pass
 
 
         
@@ -396,32 +348,15 @@ class GeneticAlgorithm:
     def stop_condition(self): 
         if self.iter >= self.max_iter: 
             return True
-
-        # current_best_fitness = max(self.score)
-        # if current_best_fitness > self.best_fitness: 
-        #     self.best_fitness = current_best_fitness
-        #     self.no_improvement_counter = 0
-        # else:
-        #     self.no_improvement_counter += 1
-        # print("no_improvemente counter: ", self.no_improvement_counter)
-        # if self.no_improvement_counter > 20:
-        #     print("He entrado aqui")
-        #     return True    
-
         return False
 
     # Method to cross the two parents
     # This method takes as argument two individuals of the popularion and
     # it must return two new individuals (potentially) for the next population.
     def crossover(self, p1, p2):
-
-        if len(p1) != len(p2):
-            raise ValueError("Parents must have the same length")
-
         crossover_point = np.random.randint(1, len(p1))
-        child1 = np.hstack([p1[:crossover_point], p2[crossover_point:]])
-        child2 = np.hstack([p2[:crossover_point], p1[:crossover_point]])
-
+        child1 = p1[:crossover_point] + p2[crossover_point:]
+        child2 = p2[:crossover_point] + p1[:crossover_point]
         return child1, child2
 
 
@@ -431,11 +366,7 @@ class GeneticAlgorithm:
     # version of the individual
     def mutation(self, c):
         # TODO
-
-        for i in range(len(c)):
-            if np.random.rand() < self.mutation_rate:
-                c[i] += np.random.normal(0, self.mutation_sigma)
-        return c
+        pass
 
 
     
@@ -467,24 +398,21 @@ class GeneticAlgorithm:
     # fitesst individual
     def optimize(self):
 
-        while not self.stop_condition() or not rospy.is_shutdown():
+        while not self.stop_condition():
             self.iter += 1
-            print("Sigo aqui")
-            # selection
-            p1, p2 = self.parents(2)
-            print("shape p1: ", np.shape(p1))
-            # crossover
-            cross = self.crossover(p1, p2)
 
-            for ind in cross:
-                mi = self.mutation(ind)
-                print("shape cross: ", np.shape(mi))
-                fitness = self.fitness(mi) # simulate the final child to obtain a fitness value
-                self.population.append(mi) # Revisar estas duas linhas, pq non esta habendo remplazo poblacional
-                self.score = np.hstack([self.score, fitness]) # Revisar estas duas linhas, pq non esta habendo remplazo poblacional
+            #selection
+            parent1, parent2 = self.parents()
 
-        
-        return self.population[np.argmax(self.score)]
+            #crossover
+            child1, child2 = self.crossover(parent1, parent2)
+
+            #mutation
+            child1 = self.mutation(child1)
+            child2 = self.mutation(child2)
+
+            #Evaluate fitness and update popu
+
 
     
 # Main program
