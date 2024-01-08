@@ -3,6 +3,7 @@
 #
 # This script will train a neural network using
 # a genetic algorithm for a robot simulated in Gazebo.
+from msilib import init_database
 import time
 from math import sqrt
 import numpy as np
@@ -360,7 +361,6 @@ class GeneticAlgorithm:
     # to me crossed in the crossover operator. The probability of selecting
     # an individual should depend on its fitness (score).
     def parents(self, ns):
-        # TODO
 
         # Metodo de ruleta
         total = np.sum(self.score)
@@ -393,10 +393,6 @@ class GeneticAlgorithm:
     # it must return two new individuals (potentially) for the next population.
     def crossover(self, p1, p2):
         crossover_point = np.random.randint(1, len(p1))
-        # na miha implementacion daba erro. cambieino
-        # child1 = p1[:crossover_point] + p2[crossover_point:]
-        # child2 = p2[:crossover_point] + p1[:crossover_point]
-
         child1 = np.hstack([p1[:crossover_point], p2[crossover_point:]])
         child2 = np.hstack([p2[:crossover_point], p1[:crossover_point]])
 
@@ -409,7 +405,10 @@ class GeneticAlgorithm:
     # version of the individual
     def mutation(self, c):
         # TODO
-        # pass
+
+        for i in range(len(c)):
+            if np.random.rang() < self.mutation_rate:
+                c[i] += np.random.normal(0, self.mutation_sigma)
         return c
 
 
@@ -442,23 +441,6 @@ class GeneticAlgorithm:
     # fitesst individual
     def optimize(self):
 
-        # while not self.stop_condition():
-        #     self.iter += 1
-
-        #     #selection
-        #     parent1, parent2 = self.parents()
-
-        #     #crossover
-        #     child1, child2 = self.crossover(parent1, parent2)
-
-        #     #mutation
-        #     child1 = self.mutation(child1)
-        #     child2 = self.mutation(child2)
-
-        #     #Evaluate fitness and update popu
-
-        # Lois' approach
-
         while not self.stop_condition():
             self.iter += 1
 
@@ -466,6 +448,7 @@ class GeneticAlgorithm:
             p1, p2 = self.parents(2)
             # crossover
             cross = self.crossover(p1, p2)
+
             # mutation
             # m1 = self.mutation(c1)
             # m2 = self.mutation(c2)
