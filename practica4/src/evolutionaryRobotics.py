@@ -472,21 +472,21 @@ class GeneticAlgorithm:
 
         while not self.stop_condition() or not rospy.is_shutdown():
             self.iter += 1
-            print("Sigo aqui")
+            # print("Sigo aqui")
 
-            print('score', self.score)
 
             # selection
             p1, p2 = self.parents(2)
-            print("shape p1: ", np.shape(p1))
-            print("shape p2: ", np.shape(p2))
+            # print("shape p1: ", np.shape(p1))
+            # print("shape p2: ", np.shape(p2))
             # crossover
             cross = self.crossover(p1, p2)
 
             # self.population = []
             for ind in cross:
+                print('score', self.score)
                 mi = self.mutation(ind)
-                print("shape cross: ", np.shape(mi))
+                # print("shape cross: ", np.shape(mi))
                 fitness = self.fitness(mi) # simulate the final child to obtain a fitness value
                 self.population.append(mi) # Revisar estas duas linhas, pq non esta habendo remplazo poblacional
                 self.score = np.hstack([self.score, fitness]) # Revisar estas duas linhas, pq non esta habendo remplazo poblacional
