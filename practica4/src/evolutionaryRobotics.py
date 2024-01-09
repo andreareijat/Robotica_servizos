@@ -174,8 +174,7 @@ class MLP:
 # Definition of the NLP for the GA. Because of how ROS works in
 # python the network object needs to be global so that ROS callbacks
 # can access it.
-units = [6, 5, 8, 2]    # TODO: Change the network architecure HERE.
-# TODO comprobar que esto non rompe cando metemos os 8 sensores do scan. quitar comentario
+units = [6, 8, 2]    # TODO: Change the network architecure HERE.
 nn = MLP(units)
 
 
@@ -208,7 +207,7 @@ scan = np.zeros((8,))
 # variable should be kept to False all time, but this will affect the
 # evaluation time of each individual on the GA.
 crash = False
-crash_distance = 0.1
+crash_distance = 0.4
 
 # ------------------------------------------------------------------
 # fitness variable holds the value of the fitness for one simulation.
@@ -263,14 +262,15 @@ def laser_cb(L):
     # TODO
 
     scan = L.ranges
-
+    
+    scan = np.nan_to_num(scan)
     cmd_vel = Twist()
     vel = nn(scan)
     
 
     max_vel = 0.4
     cmd_vel.linear.x = max(min(vel[0], max_vel), -max_vel)
-    cmd_vel.angular.z = max(min(vel[1], max_vel), -max_vel)
+    cmd_vel.angular.z = max(min(vel[1], 1), -max_vel)
     # kosas
     
     pub_vel.publish(cmd_vel)
@@ -281,15 +281,11 @@ def laser_cb(L):
         scan_max = r_max
     i = scan_max/r_max # activation
 
-    print(i)
-    print(vel[0])
-    if vel[0] < 0:
-        vel[0] = 0
-        
-    fness += vel[0] *(1-sqrt(abs(vel[1])) * (1-i)) 
+    fness += 0.1*vel[0] *(1-sqrt(abs(vel[1])) * (1-i)) 
     # cambio de = a += para 1.premiar simulacions longas, 2.ter un valor pseudo-medio
 
-    print(fness)
+    fness = max(fness, 0)
+    # print(fness)
     # Might delete later idk
     if min(scan) < crash_distance:
         crash = True
@@ -339,8 +335,8 @@ sub_clock = rospy.Subscriber('/clock', Clock, clock_cb)
 GAParams = {'dim' : 3,                  # Dimension of the search/parameter space
             'pop_size' : 20,             # Population size
             'max_iter' : 100,             # Maximum number of iterations
-            'mutation_rate' : 0.025,    # Mutation rate in the child population
-            'mutation_sigma' : 0.5,       # Variance of the normal for mutation
+            'mutation_rate' : 0.1,    # Mutation rate in the child population
+            'mutation_sigma' : 2,       # Variance of the normal for mutation
             'performace_stop' : 1e-3,   # Stop criterion, minimum performance increase
             'similarity_stop' : 0.8}    # Percentage of population similatiry over sigma score
 
@@ -363,7 +359,7 @@ class GeneticAlgorithm:
             for i in range(self.pop_size):
                 self.population.append(self.random_individual())
 
-            self.score = np.array(self.pop_size * [-np.inf])
+            self.score = np.array(self.pop_size * [0])
             self.score_prev = np.array(self.pop_size * [0])
             
     # Generate random individual to initialise the population. This
@@ -477,6 +473,7 @@ class GeneticAlgorithm:
         while not self.stop_condition() or not rospy.is_shutdown():
             self.iter += 1
             print("Sigo aqui")
+
             # selection
             p1, p2 = self.parents(2)
             print("shape p1: ", np.shape(p1))
@@ -484,12 +481,18 @@ class GeneticAlgorithm:
             # crossover
             cross = self.crossover(p1, p2)
 
+            # self.population = []
             for ind in cross:
                 mi = self.mutation(ind)
                 print("shape cross: ", np.shape(mi))
                 fitness = self.fitness(mi) # simulate the final child to obtain a fitness value
                 self.population.append(mi) # Revisar estas duas linhas, pq non esta habendo remplazo poblacional
                 self.score = np.hstack([self.score, fitness]) # Revisar estas duas linhas, pq non esta habendo remplazo poblacional
+                print('Fitness =', fness)
+                print('score', self.score)
+                
+                # Remplazo poblacional v1
+                self.population.pop(np.argmin(self.score))
 
         
         return self.population[np.argmax(self.score)]
