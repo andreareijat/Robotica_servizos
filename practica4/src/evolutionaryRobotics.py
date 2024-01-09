@@ -284,7 +284,7 @@ def laser_cb(L):
     fness += 0.1*vel[0] *(1-sqrt(abs(vel[1])) * (1-i)) 
     # cambio de = a += para 1.premiar simulacions longas, 2.ter un valor pseudo-medio
 
-    fness = max(fness, 0)
+    fness = max(fness, 0.1)
     # print(fness)
     # Might delete later idk
     if min(scan) < crash_distance:
@@ -359,7 +359,7 @@ class GeneticAlgorithm:
             for i in range(self.pop_size):
                 self.population.append(self.random_individual())
 
-            self.score = np.array(self.pop_size * [0])
+            self.score = np.array(self.pop_size * [1])
             self.score_prev = np.array(self.pop_size * [0])
             
     # Generate random individual to initialise the population. This
@@ -389,7 +389,7 @@ class GeneticAlgorithm:
                 if r<= cp:
                     parent_results.append(choice)
                     break
-
+        
         return parent_results
 
 
@@ -474,6 +474,8 @@ class GeneticAlgorithm:
             self.iter += 1
             print("Sigo aqui")
 
+            print('score', self.score)
+
             # selection
             p1, p2 = self.parents(2)
             print("shape p1: ", np.shape(p1))
@@ -489,10 +491,11 @@ class GeneticAlgorithm:
                 self.population.append(mi) # Revisar estas duas linhas, pq non esta habendo remplazo poblacional
                 self.score = np.hstack([self.score, fitness]) # Revisar estas duas linhas, pq non esta habendo remplazo poblacional
                 print('Fitness =', fness)
-                print('score', self.score)
                 
                 # Remplazo poblacional v1
-                self.population.pop(np.argmin(self.score))
+                minscore = np.argmin(self.score)
+                self.population.pop(minscore)
+                self.score.pop(minscore)
 
         
         return self.population[np.argmax(self.score)]
