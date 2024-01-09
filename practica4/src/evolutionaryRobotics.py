@@ -281,7 +281,7 @@ def laser_cb(L):
         scan_max = r_max
     i = scan_max/r_max # activation
 
-    fness += vel *(1-sqrt(abs(vel[0]-vel[1])) * (1-i)) 
+    fness += vel[0] *(1-sqrt(abs(vel[1])) * (1-i)) 
     # cambio de = a += para 1.premiar simulacions longas, 2.ter un valor pseudo-medio
 
     # Might delete later idk
