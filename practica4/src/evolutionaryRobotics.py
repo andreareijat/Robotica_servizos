@@ -281,9 +281,15 @@ def laser_cb(L):
         scan_max = r_max
     i = scan_max/r_max # activation
 
+    print(i)
+    print(vel[0])
+    if vel[0] < 0:
+        vel[0] = 0
+        
     fness += vel[0] *(1-sqrt(abs(vel[1])) * (1-i)) 
     # cambio de = a += para 1.premiar simulacions longas, 2.ter un valor pseudo-medio
 
+    print(fness)
     # Might delete later idk
     if min(scan) < crash_distance:
         crash = True
