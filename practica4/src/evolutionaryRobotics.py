@@ -270,7 +270,7 @@ def laser_cb(L):
 
     max_vel = 0.4
     cmd_vel.linear.x = max(min(vel[0], max_vel), -max_vel)
-    cmd_vel.linear.y = max(min(vel[1], max_vel), -max_vel)
+    cmd_vel.angular.z = max(min(vel[1], max_vel), -max_vel)
     # kosas
     
     pub_vel.publish(cmd_vel)
@@ -331,10 +331,10 @@ sub_clock = rospy.Subscriber('/clock', Clock, clock_cb)
 # Example of my parameters for the GA. TODO: Tune it so that the optimisation works
 # for the case study. 
 GAParams = {'dim' : 3,                  # Dimension of the search/parameter space
-            'pop_size' : 2,             # Population size
-            'max_iter' : 10,             # Maximum number of iterations
+            'pop_size' : 20,             # Population size
+            'max_iter' : 100,             # Maximum number of iterations
             'mutation_rate' : 0.025,    # Mutation rate in the child population
-            'mutation_sigma' : 2,       # Variance of the normal for mutation
+            'mutation_sigma' : 0.5,       # Variance of the normal for mutation
             'performace_stop' : 1e-3,   # Stop criterion, minimum performance increase
             'similarity_stop' : 0.8}    # Percentage of population similatiry over sigma score
 
