@@ -495,7 +495,7 @@ class GeneticAlgorithm:
                 # Remplazo poblacional v1
                 minscore = np.argmin(self.score)
                 self.population.pop(minscore)
-                self.score.pop(minscore)
+                self.score = np.delete(self.score, minscore)
 
         
         return self.population[np.argmax(self.score)]
