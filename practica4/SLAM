@@ -1,0 +1,120 @@
+import numpy as np
+from Simulator import Landmark, Map, Robot, EnvPlot
+#from autograd import jacobian
+
+# Create a map with random landmarks
+noLandmarks = 25
+m = Map()
+for i in range(noLandmarks):
+    p = np.array([np.random.uniform(-5,5), np.random.uniform(-5,5)], np.float32)
+    m.append(Landmark(p, i))
+
+# Create an object to plot the environment (map), robot and estimate
+e = EnvPlot()
+
+# Set the state and measurement noise covariance
+Q = np.array([[0.25**2, 0],[0, 0.25**2]], np.float32)
+R = np.array([[0.2**2, 0],[0, 0.2**2]], np.float32)
+
+# Create the robot object, by default measures the Cartesian
+# coordinates of the landmarks in the environment
+r = Robot(np.array([2,-2], np.float32), Q, R)
+
+class KF:
+    def __init__(self, x0, P0, Q, R, m, dt = r.dt):
+        self.dt = dt
+        self.xk_k = x0
+        self.Pk_k = P0
+        self.Q = Q * self.dt
+        self.R = R / self.dt
+        self.type = type
+        self.map = m
+        self.A = np.eye(2)
+        self.B = self.dt * np.eye(2)
+        pass
+
+    def calcular_correspondencia(self,p):
+        #funcion de correspondencia que asocia el landmark detectado por el robot a uno del mapa
+        for landmark in self.map: 
+            if landmark == p:
+                x_la, y_la = landmark.p 
+                return x_la, y_la
+
+    def y_residual(self, y):
+
+        y_gorro=[]
+
+        for landmark in y:
+            x_la = self.calcular_correspondencia(landmark)
+            y_gorro.append([x_la - self.xk_k])
+   
+        return y_gorro
+    
+    def predict(self, u): #u es la velocidad de movimiento que es [0 0.5][-0.5 0][0 -0.5][0.5 0]
+        #Implement the prediction step of the KF
+
+            self.xk_k = self.A@self.xk_k + self.B@u
+            self.Pk_k = self.A@self.Pk_k@self.A.T + self.Q
+
+    
+    def update(self, y):
+        #Implement the updarte step of the KF for localization
+        #using the field 'map' of the class
+
+        jacobiana = np.tile([[-1, 0], [0, -1]], (len(y),1))
+        I = np.eye(len(y))
+        y_gorro = self.y_residual(y)
+        y_gorro =np.array(y_gorro).flatten()
+        y = np.array([(land.p) for land in y]).flatten()
+        y_residual = y-y_gorro
+
+        R = np.kron(I,self.R)
+        S = jacobiana@self.Pk_k@jacobiana.T + R
+        
+        # Calculando la ganancia de Kalman
+        K = self.Pk_k@jacobiana.T@np.linalg.inv(S)
+        # Actualizando la estimación del estado
+        self.xk_k =  self.xk_k  + (K@y_residual)
+        
+        # Actualizando la matriz de covarianza del estado
+        self.Pk_k = self.Pk_k - K@S@K.T
+        
+
+# Initial estimates of the position of the error and its covariance
+# matrix
+xHat = np.array([0, 0], np.float32)
+PHat = np.array([[3,0],[0,3]], np.float32)
+
+# Object for the (Extended) Kalman filter estimator
+kf = KF(xHat, PHat, 0.01*Q,  R, m)
+
+# Plot the first step of the estimation process and pause
+e.plotSim(r, m, kf, True)
+
+# Main loop:
+# 1- The robot moves (action) and returns its velocity
+# 2- Predict step of the Kalman filter
+# 3- The robot perceives the environment (landmarks) and
+#    returns a list of landmarks
+# 4- Update state of the Kalman filter
+
+convergence_threshold = 0.1  
+step_count = 1  
+has_converged = False  
+while r.t < r.tf:
+
+    u = r.action()
+    kf.predict(u)
+    y = r.measure(m)
+    kf.update(y)
+    
+    #distance between estimated and actual position
+    distance = np.linalg.norm(kf.xk_k - r.p)  
+    
+    #check convergence
+    # if distance < convergence_threshold:
+    #     has_converged = True
+    #     print(f"Convergence achieved in {step_count} steps")
+    
+    step_count += 1
+    e.plotSim(r, m, kf)
